@@ -24,6 +24,7 @@
   <ItemGroup>
     <Compile Include="client.py" />
     <Compile Include="server.py" />
+    <Compile Include="client1.py" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
