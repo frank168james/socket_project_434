@@ -1,6 +1,7 @@
 import socket
 import csv 
 import hashlib 
+import json
 
 HEADER = 64
 M_PORT = 6060 #changed later *
@@ -80,12 +81,13 @@ def store_locally(record):
 
 def send_store_command(record, right_neighbor_port):
     # Establish a connection with client1 using its P_PORT
-    neighbor_addr = (SERVER, P_PORT)
+    neighbor_addr = (SERVER, right_neighbor_port)
     neighbor_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     neighbor_client.connect(neighbor_addr)
 
     # Send the storm event record to the right neighbor
-    message = "store_record:" + str(record)  # You may need to serialize the record appropriately
+    message = "store_record:" + json.dumps(record)  # Serialize the record as JSON
+    message = f"{len(message):<{HEADER}}" + message  # Prefix the message with its length
     neighbor_client.send(message.encode(FORMAT))
 
     # Close the connection

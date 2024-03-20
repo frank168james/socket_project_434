@@ -24,7 +24,9 @@ def handle_peer_connection(conn, addr):
             msg_length = conn.recv(HEADER).decode(FORMAT)
             if msg_length:
                 msg_length = int(msg_length)
+                print(f"Received message length: {msg_length}")
                 msg = conn.recv(msg_length).decode(FORMAT)
+                print(f"Received message: {msg}")
                 if msg == DISCONNECT_MSG:
                     connected = False
                 else:
@@ -41,6 +43,7 @@ def handle_peer_connection(conn, addr):
             connected = False
 
     conn.close()
+
 
 
 # Function to start listening for incoming connections from other peers
