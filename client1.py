@@ -7,9 +7,10 @@ FORMAT = 'utf-8'
 DISCONNECT_MSG = "disconnect"
 SERVER = socket.gethostbyname(socket.gethostname())  # Get server IP
 M_PORT = 6060  # Manager port
-P_PORT = 5050  # Peer port
+P_PORT = 49152  # Peer port
 ADDR_M = (SERVER, M_PORT)
 ADDR_P = (SERVER, P_PORT)
+DISCONNECT_MSG = "disconnect"
 
 # Global variable to store received storm event records
 RECEIVED_RECORDS = []
@@ -36,6 +37,10 @@ def handle_peer_connection(conn, addr):
                         record = json.loads(record_str)
                         RECEIVED_RECORDS.append(record)
                         print(f"[{addr}] Received record: {record}")
+                    elif msg.startswith("teardown-dht"):
+                        # Perform teardown process
+                        print(f"[{addr}] Received teardown command. Performing teardown...")
+                        forward_teardown_command(addr)
                     else:
                         print(f"[{addr}] Unknown message: {msg}")
         except Exception as e:
@@ -45,6 +50,19 @@ def handle_peer_connection(conn, addr):
     conn.close()
 
 
+# Function to forward the teardown command to the next neighbor
+def forward_teardown_command(addr):
+    right_neighbor_port = 5051  # Example right neighbor's port
+    neighbor_addr = (SERVER, right_neighbor_port)
+    neighbor_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        neighbor_client.connect(neighbor_addr)
+        neighbor_client.send(DISCONNECT_MSG.encode(FORMAT))
+        print(f"[FORWARD] Teardown command forwarded to the next neighbor.")
+    except Exception as e:
+        print(f"[ERROR] Unable to forward teardown command: {e}")
+    finally:
+        neighbor_client.close()
 
 # Function to start listening for incoming connections from other peers
 def start_peer():
@@ -71,27 +89,37 @@ def send_store_command(record, right_neighbor_port):
     neighbor_client.send(message.encode(FORMAT))
     neighbor_client.close()
 
-# Example usage
+
 def main():
     peer_thread = threading.Thread(target=start_peer)
     peer_thread.start()
     print("[STARTED] Peer server started.")
 
-    # Example: Send a storm event record to the right neighbor
+    #start_peer()
+    #Send a storm event record to the right neighbor
     record = {'event_id': 123, 'state': 'Texas', 'year': 2022}  # Example record
     right_neighbor_port = 5051  # Example right neighbor's port
     send_store_command(record, right_neighbor_port)
 
-    # Send a disconnect message after 10 seconds
-    threading.Timer(10, send_disconnect_message).start()
+    send_teardown_command()
 
-def send_disconnect_message():
+    # Keep the main thread alive
+    peer_thread.join()
+
+    print("[MAIN] Main function execution completed.")
+
+def send_teardown_command():
+    # Sending a teardown command to the neighbor
     neighbor_addr = (SERVER, P_PORT)
     neighbor_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    neighbor_client.connect(neighbor_addr)
-    neighbor_client.send(DISCONNECT_MSG.encode(FORMAT))
-    neighbor_client.close()
-    print("[DISCONNECT] Disconnect message sent.")
+    try:
+        neighbor_client.connect(neighbor_addr)
+        neighbor_client.send("teardown-dht".encode(FORMAT))
+        print("[TEARDOWN] Teardown command sent to the neighbor.")
+    except Exception as e:
+        print(f"[ERROR] Unable to send teardown command: {e}")
+    finally:
+        neighbor_client.close()
 
 if __name__ == "__main__":
     main()

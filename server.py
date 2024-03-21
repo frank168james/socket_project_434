@@ -13,6 +13,7 @@ DISCONNECT_MSG = "disconnect"
 PEER_INFO = {}
 DHT_SET_UP = False
 LEADER_NAME = None
+LOCAL_HASH_TABLE = {}
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind(ADDR)
@@ -35,22 +36,18 @@ def teardown_complete(peer_name):
     return "SUCCESS"
 
 def teardown_dht(peer_name):
-    global DHT_SET_UP
+    global DHT_SET_UP, LOCAL_HASH_TABLE
 
     # Check if peer is the leader of the DHT
     if peer_name != PEER_INFO.get('leader'):
         return "FAILURE: Peer is not the leader of the DHT"
-
-    # Initiating the teardown process by sending a teardown command to the leader's right neighbor
-    
-
     # Deleting local hash table
-    
+    del LOCAL_HASH_TABLE
 
     # Sending message for teardown-complete command to the server
-    
+    response = teardown_complete(peer_name)
 
-    return "SUCCESS"
+    return response
 
 
 def deregister(peer_name):
@@ -170,6 +167,7 @@ def setup_dht(peer_name, n, year):
 
     DHT_SET_UP = True
     LEADER_NAME = peer_name
+    #print(LEADER_NAME)
     return "SUCCESS"
 
 
@@ -177,90 +175,92 @@ def handle_client(conn, addr):
     print(f"[new connection] {addr} connected.")
     connected = True
     while connected:
-        msg_length = conn.recv(HEADER).decode(FORMAT)
-        if msg_length:
-            msg_length = int(msg_length)
-            msg = conn.recv(msg_length).decode(FORMAT)
-            msg, *params = msg.split()
+        try:
+            msg_length = conn.recv(HEADER).decode(FORMAT)
+            if msg_length:
+                msg_length = int(msg_length)
+                msg = conn.recv(msg_length).decode(FORMAT)
+                msg, *params = msg.split()
 
-            if msg == DISCONNECT_MSG:
-                connected = False
+                if msg == DISCONNECT_MSG:
+                    connected = False
 
-            elif msg.lower() == "register" and len(params) == 4:
-                peer_name, ip_address, m_port, p_port = params
-                REGISTER = True
+                elif msg.lower() == "register" and len(params) == 4:
+                    peer_name, ip_address, m_port, p_port = params
+                    REGISTER = True
 
-                if peer_name in PEER_INFO:
-                    response = "FAILURE: Peer name already registered"
-                else:   # Store peer information
-                    PEER_INFO[peer_name] = {
-                        'IP_ADDRESS': ip_address,
-                        'M_PORT': m_port,
-                        'P_PORT': p_port
-                    }
-                    PEER_INFO[peer_name]['STATE'] = 'Free'
-                    response = "SUCCESS: Peer registered successfully"
-                conn.send(response.encode(FORMAT))
-
-            elif msg.lower() == "setup-dht" and len(params) == 3:
-                peer_name, n, year = params
-                n = int(n)
-                year = int(year)
-                response = setup_dht(peer_name, n, year)
-                conn.send(response.encode(FORMAT))
-
-            elif msg.lower() == "dht-complete" and len(params) == 1:
-                leader_name = params[0]
-                if leader_name == LEADER_NAME:
-                    conn.send("SUCCESS".encode(FORMAT))
-                else:
-                    conn.send("FAILURE: Not the leader of the DHT".encode(FORMAT))
-
-            elif msg.lower() == "query-dht" and len(params) == 1:
-                peer_name = params[0]
-                response = query_dht(peer_name)
-                if response[0] == "SUCCESS":
-                    conn.send(response[0].encode(FORMAT))
-                    conn.send(str(response[1]).encode(FORMAT))  # Sending selected peer info
-                else:
+                    if peer_name in PEER_INFO:
+                        response = "FAILURE: Peer name already registered"
+                    else:   # Store peer information
+                        PEER_INFO[peer_name] = {
+                            'IP_ADDRESS': ip_address,
+                            'M_PORT': m_port,
+                            'P_PORT': p_port
+                        }
+                        PEER_INFO[peer_name]['STATE'] = 'Free'
+                        response = "SUCCESS: Peer registered successfully"
                     conn.send(response.encode(FORMAT))
 
-            elif msg.lower() == "leave-dht" and len(params) == 1:
-                peer_name = params[0]
-                response = leave_dht(peer_name)
-                conn.send(response.encode(FORMAT))
+                elif msg.lower() == "setup-dht" and len(params) == 3:
+                    peer_name, n, year = params
+                    n = int(n)
+                    year = int(year)
+                    response = setup_dht(peer_name, n, year)
+                    conn.send(response.encode(FORMAT))
 
-            elif msg.lower() == "join-dht" and len(params) == 1:
-                peer_name = params[0]
-                response = join_dht(peer_name)
-                conn.send(response.encode(FORMAT))
+                elif msg.lower() == "dht-complete" and len(params) == 1:
+                    leader_name = params[0]
+                    if leader_name == LEADER_NAME:
+                        conn.send("SUCCESS".encode(FORMAT))
+                    else:
+                        conn.send("FAILURE: Not the leader of the DHT".encode(FORMAT))
 
-            elif msg.lower() == "dht-rebuilt" and len(params) == 2:
-                peer_name, new_leader = params
-                response = dht_rebuilt(peer_name, new_leader)
-                conn.send(response.encode(FORMAT))
+                elif msg.lower() == "query-dht" and len(params) == 1:
+                    peer_name = params[0]
+                    response = query_dht(peer_name)
+                    if response[0] == "SUCCESS":
+                        conn.send(response[0].encode(FORMAT))
+                        conn.send(str(response[1]).encode(FORMAT))  # Sending selected peer info
+                    else:
+                        conn.send(response.encode(FORMAT))
 
-            elif msg.lower() == "deregister" and len(params) == 1:
-                peer_name = params[0]
-                response = deregister(peer_name)
-                conn.send(response.encode(FORMAT))
+                elif msg.lower() == "leave-dht" and len(params) == 1:
+                    peer_name = params[0]
+                    response = leave_dht(peer_name)
+                    conn.send(response.encode(FORMAT))
 
-            elif msg.lower() == "teardown-dht" and len(params) == 1:
-                peer_name = params[0]
-                response = teardown_dht(peer_name)
-                conn.send(response.encode(FORMAT))
+                elif msg.lower() == "join-dht" and len(params) == 1:
+                    peer_name = params[0]
+                    response = join_dht(peer_name)
+                    conn.send(response.encode(FORMAT))
 
-            elif msg.lower() == "teardown-complete" and len(params) == 1:
-                peer_name = params[0]
-                response = teardown_complete(peer_name)
-                conn.send(response.encode(FORMAT))
+                elif msg.lower() == "dht-rebuilt" and len(params) == 2:
+                    peer_name, new_leader = params
+                    response = dht_rebuilt(peer_name, new_leader)
+                    conn.send(response.encode(FORMAT))
 
+                elif msg.lower() == "deregister" and len(params) == 1:
+                    peer_name = params[0]
+                    response = deregister(peer_name)
+                    conn.send(response.encode(FORMAT))
 
-            else:
-                conn.send("Invalid command".encode(FORMAT))
+                elif msg.lower() == "teardown-dht" and len(params) == 1:
+                    peer_name = params[0]
+                    response = teardown_dht(peer_name)
+                    conn.send(response.encode(FORMAT))
 
-            print(f"[{addr}] {msg}")
+                elif msg.lower() == "teardown-complete" and len(params) == 1:
+                    peer_name = params[0]
+                    response = teardown_complete(peer_name)
+                    conn.send(response.encode(FORMAT))
+                
+                else:
+                    conn.send("Invalid command".encode(FORMAT))
 
+                print(f"[{addr}] {msg}")
+        except Exception as e:
+            print(f"Error occurred: {e}")
+            connected = False
     conn.close()
 
 def start():
