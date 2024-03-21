@@ -5,7 +5,7 @@ import json
 
 HEADER = 64
 M_PORT = 6060 #changed later *
-P_PORT = 49152 #changed later *
+P_PORT = 50001 #changed later *
 FORMAT = 'utf-8'
 DISCONNECT_MSG = "disconnect"
 SERVER = socket.gethostbyname(socket.gethostname()) #get server ip
@@ -13,6 +13,7 @@ ADDR_M = (SERVER, M_PORT)
 COMMAND = "Register Frank 192.168.56.1 6060 5050"
 RESPONSE_LENGTH = 2048
 FILE_NAME = r"C:/Users/frank/Downloads/1990-1992/processed/details-1992.csv"
+#"C:/Users/frank/Downloads/1950-1952 (1)/1950-1952/details-1950.csv" 
 LOCAL_HASH_TABLE = {}
 DHT_SET_UP = False
 PEER_INFO = {}
@@ -224,7 +225,35 @@ send("Register Fran 192.168.56.1 6060 49157")
 query_dht("Fran")
 leave_dht("Frank")
 join_dht("Fran")
+send("dht-rebuilt Fran Frank")
+send("Register Frank1 192.168.56.1 6060 49157")
+send("deregister Frank1")
 teardown_dht("Frank")
+#peers = {0: 'Peer1', 1: 'Peer2', 2: 'Peer3', 3: 'Peer4', 4: 'Peer5', 5: 'Peer6'}
+
+#send(f"Register Peer1 192.168.56.1 6060 49152")
+#send(f"Register Peer2 192.168.56.1 6060 49153")
+#send(f"Register Peer3 192.168.56.1 6060 49154")
+#send(f"Register Peer4 192.168.56.1 6060 49155")
+#send(f"Register Peer5 192.168.56.1 6060 49156")
+#send(f"Register Peer6 192.168.56.1 6060 49157")
+#setup_dht("Peer1", 5, 1996)
+
+#event_ids = [5536849, 2402920, 5539287, 55770111]
+#for event_id in event_ids:
+ #   query_dht(event_id)
+
+#leave_dht("Peer2")
+#query_dht(5536849)  # Query by the peer that left the DHT
+
+#join_dht("Peer6")
+#query_dht(55770111)  # Query by the remaining peer outside the DHT
+
+#teardown_dht("Peer1")
+
+# Graceful termination
+print("Gracefully terminating...")
+print("Terminated.")
 #send(COMMAND)
 #send("dht-complete Frank")
 #send("Register <Fra> <IP-address> <m-port> <p-port>")

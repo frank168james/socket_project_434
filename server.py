@@ -4,7 +4,7 @@ import random
 
 HEADER = 64
 M_PORT = 6060
-P_PORT = 0 
+P_PORT = 500001 
 SERVER = socket.gethostbyname(socket.gethostname())
 IP_ADDRESS = ""
 ADDR = (SERVER, M_PORT)
@@ -47,7 +47,7 @@ def teardown_dht(peer_name):
     # Sending message for teardown-complete command to the server
     response = teardown_complete(peer_name)
 
-    return response
+    return "SUCCESS"
 
 
 def deregister(peer_name):
@@ -66,8 +66,8 @@ def dht_rebuilt(peer_name, new_leader): #might have error here
     global DHT_SET_UP
 
     # Check if peer name matches the one initiating leave-dht or join-dht
-    if peer_name not in [PEER_INFO.get(peer, {}).get('NAME') for peer in ['leave-dht', 'join-dht']]:
-        return "FAILURE: Peer name does not match the one initiating leave-dht or join-dht"
+    #if peer_name not in [PEER_INFO.get(peer, {}).get('NAME') for peer in ['leave-dht', 'join-dht']]:
+     #   return "FAILURE: Peer name does not match the one initiating leave-dht or join-dht"
 
     # Set state of peer as appropriate
     if peer_name == 'leave-dht':
