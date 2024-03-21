@@ -95,7 +95,7 @@ def main():
     peer_thread.start()
     print("[STARTED] Peer server started.")
 
-    #start_peer()
+    start_peer()
     #Send a storm event record to the right neighbor
     record = {'event_id': 123, 'state': 'Texas', 'year': 2022}  # Example record
     right_neighbor_port = 5051  # Example right neighbor's port
